@@ -1,5 +1,5 @@
 # Dockerfile สำหรับ n8n บน Render
-FROM n8nio/n8n:1.100.1
+FROM n8nio/n8n:1.107.4
 
 # ติดตั้ง dependencies เพิ่มเติม
 USER root
