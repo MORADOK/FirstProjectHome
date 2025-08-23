@@ -1,22 +1,18 @@
-# render.yaml — n8n on Render (latest stable 1.107.4)
-
 services:
   - type: web
     name: n8n-vaccine-workflow
-    runtime: image
-    image:
-      url: docker.io/n8nio/n8n:1.107.4
+    runtime: docker                # << เดิมคุณใช้ env: docker → ใช้ runtime แทน
+    dockerfilePath: ./Dockerfile
     plan: starter
     region: singapore
     branch: main
     autoDeploy: true
 
-    # Zero-downtime: ให้ Render เช็คความพร้อม DB/แอปก่อนสลับทราฟฟิก
+    # ให้ Render เช็กความพร้อม DB/แอปก่อนสลับทราฟฟิก (zero-downtime)
     healthCheckPath: /healthz/readiness
 
-    # ตั้งค่าที่อ้างอิงโดเมนอัตโนมัติจาก RENDER_EXTERNAL_URL
-    # + bind ทุกอินเตอร์เฟส
-    startCommand: >
+    # ใช้ URL ภายนอกจาก Render เพื่อเซ็ตค่าที่ n8n ต้องการอัตโนมัติ
+    dockerCommand: >
       bash -lc 'export N8N_EDITOR_BASE_URL="$RENDER_EXTERNAL_URL";
       export WEBHOOK_URL="$RENDER_EXTERNAL_URL";
       export N8N_HOST="$(echo "$RENDER_EXTERNAL_URL" | sed -E "s#^https?://([^/]+)/?$#\\1#")";
@@ -24,10 +20,9 @@ services:
       n8n start'
 
     envVars:
-      # พื้นฐานการรัน
       - key: NODE_ENV
         value: production
-      - key: PORT            # ช่วยให้ Render จับพอร์ตถูกต้อง
+      - key: PORT
         value: 5678
       - key: N8N_PORT
         value: 5678
@@ -48,39 +43,15 @@ services:
       - key: DB_POSTGRESDB_PASSWORD
         fromDatabase: { name: n8n-postgres, property: password }
 
-      # Encryption key (ห้ามเปลี่ยนสุ่ม ๆ บ่อย ๆ ไม่งั้น credentials เดิมเปิดไม่ได้)
-      # แนะนำ: ตั้งใน Dashboard เองเพื่อคงที่
+      # อย่าเปลี่ยนคีย์นี้ หากมีอยู่แล้ว (ไม่งั้น credentials เดิมถอดรหัสไม่ได้)
       - key: N8N_ENCRYPTION_KEY
         sync: false
 
-      # CORS - เรียกจากเว็บภายนอก (เช่น Netlify) ถ้าต้องการ
+      # (ตัวเลือก) CORS ถ้ายิงจากเว็บภายนอก
       - key: N8N_DEFAULT_CORS
         value: 'true'
       - key: N8N_CORS_ALLOW_ORIGIN
         value: https://vaccinesystem.netlify.app
-      # ถ้าต้องการ header เพิ่มเติมค่อยเติมภายหลัง:
-      # - key: N8N_CORS_ALLOW_HEADERS
-      #   value: authorization,content-type,x-client-info,apikey
-      # - key: N8N_CORS_ALLOW_METHODS
-      #   value: GET,POST,OPTIONS
-
-      # ==== ความลับอื่น ๆ ใส่ใน Dashboard (จะไม่ commit ลง repo) ====
-      - key: LINE_CHANNEL_ACCESS_TOKEN
-        sync: false
-      - key: LINE_CHANNEL_SECRET
-        sync: false
-      - key: GOOGLE_ACCESS_TOKEN
-        sync: false
-      - key: GOOGLE_REFRESH_TOKEN
-        sync: false
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: GOOGLE_SPREADSHEET_ID
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
 
 databases:
   - name: n8n-postgres
