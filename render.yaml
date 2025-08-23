@@ -1,96 +1,84 @@
-# render.yaml - การตั้งค่า Render Service
+# render.yaml — n8n on Render (latest stable 1.107.4)
+
 services:
   - type: web
     name: n8n-vaccine-workflow
-    env: docker
-    dockerfilePath: ./Dockerfile
-    plan: starter # หรือ standard, pro ตามความต้องการ
-    region: singapore # เลือก region ที่ใกล้ที่สุด
+    runtime: image
+    image:
+      url: docker.io/n8nio/n8n:1.107.4
+    plan: starter
+    region: singapore
     branch: main
-    buildCommand: ""
-    startCommand: "n8n start"
-    
-    # การตั้งค่า Environment Variables
+    autoDeploy: true
+
+    # Zero-downtime: ให้ Render เช็คความพร้อม DB/แอปก่อนสลับทราฟฟิก
+    healthCheckPath: /healthz/readiness
+
+    # ตั้งค่าที่อ้างอิงโดเมนอัตโนมัติจาก RENDER_EXTERNAL_URL
+    # + bind ทุกอินเตอร์เฟส
+    startCommand: >
+      bash -lc 'export N8N_EDITOR_BASE_URL="$RENDER_EXTERNAL_URL";
+      export WEBHOOK_URL="$RENDER_EXTERNAL_URL";
+      export N8N_HOST="$(echo "$RENDER_EXTERNAL_URL" | sed -E "s#^https?://([^/]+)/?$#\\1#")";
+      export N8N_LISTEN_ADDRESS=0.0.0.0;
+      n8n start'
+
     envVars:
+      # พื้นฐานการรัน
       - key: NODE_ENV
         value: production
-      
-      - key: N8N_HOST
-        value: 0.0.0.0
-      
+      - key: PORT            # ช่วยให้ Render จับพอร์ตถูกต้อง
+        value: 5678
       - key: N8N_PORT
         value: 5678
-      
       - key: N8N_PROTOCOL
         value: https
-      
-      - key: N8N_EDITOR_BASE_URL
-        fromService:
-          type: web
-          name: n8n-vaccine-workflow
-          property: host
-      
-      - key: WEBHOOK_URL
-        fromService:
-          type: web
-          name: n8n-vaccine-workflow
-          property: host
-      
-      - key: N8N_ENCRYPTION_KEY
-        generateValue: true # Render จะสร้างค่าสุ่มให้
-      
+
+      # Database (Render Postgres)
       - key: DB_TYPE
         value: postgresdb
-      
       - key: DB_POSTGRESDB_HOST
-        fromDatabase:
-          name: n8n-postgres
-          property: host
-      
+        fromDatabase: { name: n8n-postgres, property: host }
       - key: DB_POSTGRESDB_PORT
-        fromDatabase:
-          name: n8n-postgres
-          property: port
-      
+        fromDatabase: { name: n8n-postgres, property: port }
       - key: DB_POSTGRESDB_DATABASE
-        fromDatabase:
-          name: n8n-postgres
-          property: database
-      
+        fromDatabase: { name: n8n-postgres, property: database }
       - key: DB_POSTGRESDB_USER
-        fromDatabase:
-          name: n8n-postgres
-          property: user
-      
+        fromDatabase: { name: n8n-postgres, property: user }
       - key: DB_POSTGRESDB_PASSWORD
-        fromDatabase:
-          name: n8n-postgres
-          property: password
-      
-      # LINE Bot Credentials (ตั้งค่าใน Render Dashboard)
+        fromDatabase: { name: n8n-postgres, property: password }
+
+      # Encryption key (ห้ามเปลี่ยนสุ่ม ๆ บ่อย ๆ ไม่งั้น credentials เดิมเปิดไม่ได้)
+      # แนะนำ: ตั้งใน Dashboard เองเพื่อคงที่
+      - key: N8N_ENCRYPTION_KEY
+        sync: false
+
+      # CORS - เรียกจากเว็บภายนอก (เช่น Netlify) ถ้าต้องการ
+      - key: N8N_DEFAULT_CORS
+        value: 'true'
+      - key: N8N_CORS_ALLOW_ORIGIN
+        value: https://vaccinesystem.netlify.app
+      # ถ้าต้องการ header เพิ่มเติมค่อยเติมภายหลัง:
+      # - key: N8N_CORS_ALLOW_HEADERS
+      #   value: authorization,content-type,x-client-info,apikey
+      # - key: N8N_CORS_ALLOW_METHODS
+      #   value: GET,POST,OPTIONS
+
+      # ==== ความลับอื่น ๆ ใส่ใน Dashboard (จะไม่ commit ลง repo) ====
       - key: LINE_CHANNEL_ACCESS_TOKEN
-        sync: false # ป้อนเองใน Dashboard
-      
+        sync: false
       - key: LINE_CHANNEL_SECRET
         sync: false
-      
-      # Google API Credentials
       - key: GOOGLE_ACCESS_TOKEN
         sync: false
-      
       - key: GOOGLE_REFRESH_TOKEN
         sync: false
-      
       - key: GOOGLE_CLIENT_ID
         sync: false
-      
       - key: GOOGLE_CLIENT_SECRET
         sync: false
-      
       - key: GOOGLE_SPREADSHEET_ID
         sync: false
-      
-      # OpenAI API Key (สำหรับ AI Router)
       - key: OPENAI_API_KEY
         sync: false
 
@@ -98,5 +86,5 @@ databases:
   - name: n8n-postgres
     databaseName: n8n_db
     user: n8n_user
-    plan: starter # หรือตามความต้องการ
+    plan: starter
     region: singapore
