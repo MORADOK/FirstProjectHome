@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบลงทะเบียนโรงพยาบาลโฮม</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #F0F4F8; text-align: center; }
+        .container { padding: 20px; }
+        #status-message { font-size: 1.1em; font-weight: 500; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p id="status-message">กำลังเตรียมข้อมูล...</p>
+    </div>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+        // ฟังก์ชันหลักของ LIFF App
+        async function main() {
+            // --- ส่วนที่ต้องแก้ไข ---
+            const LIFF_ID = "2007612128-o39NWw7Y"; // 👈 วาง LIFF ID ที่ได้จากขั้นตอนที่ 1 ที่นี่
+            const N8N_WEBHOOK_URL = "https://32cb1f685ee5.ngrok-free.app/webhook-test/line-webhook"; // 👈 วาง Webhook URL ของ n8n ที่นี่
+            // --------------------
+
+            const statusMessage = document.getElementById('status-message');
+
+            try {
+                // 2. เริ่มต้นการทำงานของ LIFF และเชื่อมต่อกับ LINE
+                statusMessage.innerText = "กำลังเชื่อมต่อกับ LINE...";
+                await liff.init({ liffId: LIFF_ID });
+
+                // 3. ตรวจสอบสถานะการ Login
+                if (!liff.isLoggedIn()) {
+                    statusMessage.innerText = "กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ";
+                    liff.login(); // ถ้ายังไม่ Login ให้เปิดหน้า Login ของ LINE
+                    return;
+                }
+
+                // 4. ดึงข้อมูลโปรไฟล์ (ชื่อ, รูป, userId)
+                statusMessage.innerText = "กำลังดึงข้อมูลโปรไฟล์...";
+                const userProfile = await liff.getProfile();
+
+                // 5. เตรียมข้อมูลเป็น JSON เพื่อส่งไปที่ n8n
+                const dataToSend = {
+                    userId: userProfile.userId,
+                    displayName: userProfile.displayName
+                };
+
+                // 6. ส่งข้อมูลไปที่ n8n Webhook
+                statusMessage.innerText = "กำลังส่งข้อมูลเพื่อลงทะเบียน...";
+                await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSend),
+                });
+
+                // 7. แจ้งว่าสำเร็จ และปิดหน้าต่าง LIFF
+                statusMessage.innerText = "ลงทะเบียนสำเร็จ! กรุณากลับไปที่หน้าแชท";
+                setTimeout(() => { liff.closeWindow(); }, 2000);
+
+            } catch (error) {
+                // กรณีเกิดข้อผิดพลาด
+                console.error(error);
+                statusMessage.innerText = "เกิดข้อผิดพลาด: " + error.message;
+            }
+        }
+
+        main();
+    </script>
+</body>
+</html>

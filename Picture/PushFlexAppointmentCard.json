@@ -1,0 +1,18 @@
+{
+  "name": "Push Flex Appointment Card",
+  "type": "n8n-nodes-base.httpRequest",
+  "typeVersion": 4,
+  "position": [
+    600,
+    400
+  ],
+  "parameters": {
+    "method": "POST",
+    "url": "https://api.line.me/v2/bot/message/push",
+    "jsonParameters": true,
+    "options": {},
+    "bodyParametersJson": "{\n  \"to\": \"={{ $json.LineUserID }}\",\n  \"messages\": [\n    {\n      \"type\": \"flex\",\n      \"altText\": \"บัตรนัดโรงพยาบาล\",\n      \"contents\": {\n        \"type\": \"bubble\",\n        \"body\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"contents\": [\n            {\n              \"type\": \"text\",\n              \"text\": \"บัตรนัด\",\n              \"weight\": \"bold\",\n              \"size\": \"xl\",\n              \"color\": \"#1DB446\"\n            },\n            {\n              \"type\": \"text\",\n              \"text\": \"โรงพยาบาลโฮม\",\n              \"weight\": \"bold\",\n              \"size\": \"lg\",\n              \"margin\": \"md\"\n            },\n            {\n              \"type\": \"separator\",\n              \"margin\": \"lg\"\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"margin\": \"lg\",\n              \"contents\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": \"ชื่อผู้ป่วย:\",\n                  \"size\": \"md\"\n                },\n                {\n                  \"type\": \"text\",\n                  \"text\": \"={{ $json.PatientName }}\",\n                  \"size\": \"md\",\n                  \"align\": \"end\"\n                }\n              ]\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"margin\": \"sm\",\n              \"contents\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": \"วัคซีน:\",\n                  \"size\": \"md\"\n                },\n                {\n                  \"type\": \"text\",\n                  \"text\": \"={{ $json.VaccineName }}\",\n                  \"size\": \"md\",\n                  \"align\": \"end\"\n                }\n              ]\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"margin\": \"sm\",\n              \"contents\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": \"วันที่:\",\n                  \"size\": \"md\"\n                },\n                {\n                  \"type\": \"text\",\n                  \"text\": \"={{ $json.AppointmentDate || $json.VaccinationDate }}\",\n                  \"size\": \"md\",\n                  \"align\": \"end\"\n                }\n              ]\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"margin\": \"sm\",\n              \"contents\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": \"เวลา:\",\n                  \"size\": \"md\"\n                },\n                {\n                  \"type\": \"text\",\n                  \"text\": \"={{ $json.AppointmentTime || '-' }}\",\n                  \"size\": \"md\",\n                  \"align\": \"end\"\n                }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  ]\n}"
+  },
+  "credentials": {},
+  "id": "PushFlexAppointmentCard"
+}

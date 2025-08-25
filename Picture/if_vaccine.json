@@ -1,0 +1,28 @@
+[
+  {
+    "parameters": {
+      "conditions": {
+        "string": [
+          {
+            "value1": "={{ $json.body.events[0].type }}",
+            "operation": "equals",
+            "value2": "postback"
+          },
+          {
+            "value1": "={{ $json.body.events[0].message.text || '' }}",
+            "operation": "startsWith",
+            "value2": "วัคซีน"
+          }
+        ]
+      },
+      "combineOperation": "any"
+    },
+    "name": "IF เลือกวัคซีนแล้ว?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 1,
+    "position": [
+      600,
+      350
+    ]
+  }
+]

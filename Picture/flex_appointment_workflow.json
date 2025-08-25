@@ -1,0 +1,167 @@
+{
+  "meta": {
+    "instanceId": "flex-test"
+  },
+  "nodes": [
+    {
+      "id": "SetSampleData",
+      "name": "Set Sample Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        400,
+        400
+      ],
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "LineUserID", "value": "USER_LINE_ID" },
+            { "name": "PatientName", "value": "สมชาย ใจดี" },
+            { "name": "VaccineName", "value": "HPV" },
+            { "name": "AppointmentDate", "value": "10/07/2025" },
+            { "name": "AppointmentTime", "value": "09:00 - 11:00" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "PushFlexAppointmentCard",
+      "name": "Push Flex Appointment Card",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        600,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": {
+          "to": "={{ $json.LineUserID }}",
+          "messages": [
+            {
+              "type": "flex",
+              "altText": "บัตรนัดโรงพยาบาล",
+              "contents": {
+                "type": "bubble",
+                "body": {
+                  "type": "box",
+                  "layout": "vertical",
+                  "contents": [
+                    {
+                      "type": "text",
+                      "text": "บัตรนัด",
+                      "weight": "bold",
+                      "size": "xl",
+                      "color": "#1DB446"
+                    },
+                    {
+                      "type": "text",
+                      "text": "โรงพยาบาลโฮม",
+                      "weight": "bold",
+                      "size": "lg",
+                      "margin": "md"
+                    },
+                    {
+                      "type": "separator",
+                      "margin": "lg"
+                    },
+                    {
+                      "type": "box",
+                      "layout": "horizontal",
+                      "margin": "lg",
+                      "contents": [
+                        {
+                          "type": "text",
+                          "text": "ชื่อผู้ป่วย:",
+                          "size": "md"
+                        },
+                        {
+                          "type": "text",
+                          "text": "={{ $json.PatientName }}",
+                          "size": "md",
+                          "align": "end"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "box",
+                      "layout": "horizontal",
+                      "margin": "sm",
+                      "contents": [
+                        {
+                          "type": "text",
+                          "text": "วัคซีน:",
+                          "size": "md"
+                        },
+                        {
+                          "type": "text",
+                          "text": "={{ $json.VaccineName }}",
+                          "size": "md",
+                          "align": "end"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "box",
+                      "layout": "horizontal",
+                      "margin": "sm",
+                      "contents": [
+                        {
+                          "type": "text",
+                          "text": "วันที่:",
+                          "size": "md"
+                        },
+                        {
+                          "type": "text",
+                          "text": "={{ $json.AppointmentDate }}",
+                          "size": "md",
+                          "align": "end"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "box",
+                      "layout": "horizontal",
+                      "margin": "sm",
+                      "contents": [
+                        {
+                          "type": "text",
+                          "text": "เวลา:",
+                          "size": "md"
+                        },
+                        {
+                          "type": "text",
+                          "text": "={{ $json.AppointmentTime }}",
+                          "size": "md",
+                          "align": "end"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Set Sample Data": {
+      "main": [
+        [
+          {
+            "node": "PushFlexAppointmentCard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}

@@ -1,0 +1,62 @@
+// ใส่ JSON ของ Rich Menu ที่นี่
+$json.data = {
+{
+  "size": {
+    "width": 1200,
+    "height": 810
+  },
+  "selected": false,
+  "name": "Main Menu",
+  "chatBarText": "เมนูหลัก",
+  "areas": [
+    {
+      "bounds": {
+        "x": 474,
+        "y": 58,
+        "width": 254,
+        "height": 338
+      },
+      "action": {
+        "type": "message",
+        "text": "ข้อมูลโรงพยาบาลโฮม"
+      }
+    },
+    {
+      "bounds": {
+        "x": 83,
+        "y": 365,
+        "width": 242,
+        "height": 216
+      },
+      "action": {
+        "type": "message",
+        "text": "เช็คอิน"
+      }
+    },
+    {
+      "bounds": {
+        "x": 857,
+        "y": 340,
+        "width": 278,
+        "height": 258
+      },
+      "action": {
+        "type": "uri",
+        "uri": "tel:038511123"
+      }
+    },
+    {
+      "bounds": {
+        "x": 452,
+        "y": 470,
+        "width": 289,
+        "height": 267
+      },
+      "action": {
+        "type": "message",
+        "text": "บันทึกนัดหมาย/ชื่อวัคซีน"
+      }
+    }
+  ]
+}
+}

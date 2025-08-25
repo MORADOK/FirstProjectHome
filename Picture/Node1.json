@@ -1,0 +1,196 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "line-vaccine-bot",
+        "options": {}
+      },
+      "id": "3f72365e-2f5a-4b61-9f93-118e7e1e792c",
+      "name": "1. LINE Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getMany",
+        "documentId": "={{ $json.env.GOOGLE_SPREADSHEET_ID }}",
+        "sheetName": "Users",
+        "filters": {
+          "conditions": [
+            {
+              "key": "userId",
+              "value": "={{ $json.body.events[0].source.userId }}"
+            }
+          ]
+        },
+        "options": {
+          "limit": 1
+        }
+      },
+      "id": "71a17937-236b-4e9f-8646-6014e760c679",
+      "name": "2. Get User Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        40,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node prepares the prompt for the AI\nconst item = $input.item;\nconst lineEvent = item.json.body?.events?.[0];\n\n// Correctly check if the user exists by checking the array length\nconst userDataArray = $input.item.json.data;\nconst isExistingUser = userDataArray.length > 0;\n\n// Stop execution if no valid LINE event is found\nif (!lineEvent) {\n  console.log(\"No valid LINE event found. Stopping.\");\n  return null;\n}\n\n// Determine action from postback or text\nlet action = 'unknown';\nif (lineEvent.postback?.data) {\n  try {\n    action = JSON.parse(lineEvent.postback.data).action;\n  } catch {\n    action = lineEvent.postback.data;\n  }\n}\n\nconst userMessage = lineEvent.message?.text || action || ' ';\n\n// Construct the prompt for the AI\nconst routingPrompt = `\nYou are an AI assistant for a vaccine booking system.\nBased on the user's latest message and action, determine the primary intent.\n\nContext:\n- User's message: \"${userMessage}\"\n- Rich menu action: \"${action}\"\n- Is the user already registered?: ${isExistingUser}\n\nYour task is to respond with a JSON object that routes the user to the correct function. The possible routes are: 'register', 'booking', 'status_check', 'contact_info', or 'unknown'.\n\nRespond with ONLY the JSON object.\n`;\n\n// Prepare the request body for the standard OpenAI Chat Model node\nitem.json.openai_request_body = {\n  model: 'gpt-4o',\n  messages: [{ role: 'user', content: routingPrompt }],\n  response_format: { type: 'json_object' },\n  temperature: 0\n};\n\nreturn item;\n"
+      },
+      "id": "97b1a8f9-46e3-44d5-827d-b570889f13b6",
+      "name": "3. Prepare AI Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "body": "={{ $json.openai_request_body }}",
+        "options": {}
+      },
+      "id": "00a6e3e5-f482-4f10-9136-1e0e5a8f2732",
+      "name": "4. Execute AI Router",
+      "type": "n8n-nodes-base.openAiChat",
+      "typeVersion": 1,
+      "position": [
+        500,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "value1": "={{ JSON.parse($json.choices[0].message.content).route }}",
+              "value2": "status_check"
+            }
+          ]
+        }
+      },
+      "id": "89b9643d-0b74-4b53-91c2-63b7d1880436",
+      "name": "5. Route Logic",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        720,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node prepares the complete reply payload for LINE\nconst item = $input.item;\nconst route = JSON.parse(item.json.choices[0].message.content).route;\nconst replyToken = item.json.body.events[0].replyToken;\n\nlet responseText = '';\n\nif (route === 'status_check') {\n  // In a full implementation, you'd fetch data from the 'Appointments' sheet here\n  responseText = 'คุณเลือกเมนูตรวจสอบสถานะ ขณะนี้ฟังก์ชันนี้กำลังอยู่ในระหว่างการพัฒนาค่ะ';\n} else if (route === 'booking') {\n  responseText = 'คุณเลือกเมนูจองวัคซีน กรุณาระบุประเภทวัคซีนที่ต้องการค่ะ';\n} else if (route === 'register') {\n  responseText = 'คุณเลือกเมนูลงทะเบียนใหม่ กรุณาพิมพ์ชื่อและนามสกุลเพื่อเริ่มค่ะ';\n} else if (route === 'contact_info') {\n  responseText = 'คุณสามารถติดต่อเจ้าหน้าที่ได้ที่เบอร์ 02-123-4567 ค่ะ';\n} else {\n  responseText = 'ขออภัยค่ะ ฉันไม่เข้าใจคำสั่งของคุณ กรุณาเลือกจากเมนูหลักค่ะ';\n}\n\n// Create the complete payload for the HTTP Request node\nitem.json.lineReplyPayload = {\n  replyToken: replyToken,\n  messages: [\n    {\n      type: 'text',\n      text: responseText,\n    }\n  ]\n};\n\nreturn item;"
+      },
+      "id": "1893c54a-a1ad-48b6-b52b-c8c2a8f3316b",
+      "name": "6. Create Reply Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "sendBody": true,\n        "specifyBody": "json",\n        "jsonBody": "={{ $json.lineReplyPayload }}",
+        "options": {}
+      },
+      "id": "2d1bb483-e1d8-4df8-92a0-424a1801dd34",
+      "name": "7. Send LINE Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "1. LINE Webhook": {
+      "main": [
+        [
+          {
+            "node": "2. Get User Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Get User Data": {
+      "main": [
+        [
+          {
+            "node": "3. Prepare AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Prepare AI Prompt": {
+      "main": [
+        [
+          {
+            "node": "4. Execute AI Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Execute AI Router": {
+      "main": [
+        [
+          {
+            "node": "5. Route Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Route Logic": {
+      "main": [
+        [
+          {
+            "node": "6. Create Reply Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "6. Create Reply Payload",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "6. Create Reply Payload": {
+      "main": [
+        [
+          {
+            "node": "7. Send LINE Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

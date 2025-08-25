@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>จองวัคซีนผ่าน LIFF</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    button {
+      margin: 10px;
+      padding: 15px;
+      font-size: 16px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h2>เลือกวัคซีนที่ต้องการจอง</h2>
+  
+  <button onclick="bookVaccine('flu')">วัคซีนไข้หวัดใหญ่</button>
+  <button onclick="bookVaccine('hep_b')">วัคซีนไวรัสตับอักเสบบี</button>
+  <button onclick="bookVaccine('tetanus')">วัคซีนบาดทะยัก</button>
+  <button onclick="bookVaccine('hpv')">วัคซีน HPV</button>
+  <button onclick="bookVaccine('rabies')">วัคซีนพิษสุนัขบ้า</button>
+
+  <script>
+    async function bookVaccine(vaccineCode) {
+      await liff.init({ liffId: "2007564406-DNQKZNnq" });
+      const profile = await liff.getProfile();
+
+      fetch('https://firstprojecthome.onrender.com/webhook-test/Webhook-Vaccine', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          action: "book",
+          vaccine: vaccineCode,
+          lineUserId: profile.userId,
+        })
+      }).then(res => {
+        if(res.ok){
+          alert("จองวัคซีนสำเร็จ");
+        }else{
+          alert("เกิดข้อผิดพลาดในการจอง");
+        }
+        liff.closeWindow();
+      });
+    }
+  </script>
+</body>
+</html>

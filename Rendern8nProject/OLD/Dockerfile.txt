@@ -1,0 +1,26 @@
+# Dockerfile สำหรับ n8n บน Render
+FROM n8nio/n8n:latest
+
+# ตั้งค่า User
+USER root
+
+# ติดตั้ง dependencies เพิ่มเติม (ถ้าต้องการ)
+RUN apk add --no-cache     tzdata     curl
+
+# ตั้งค่า timezone
+ENV TZ=Asia/Bangkok
+
+# กลับไปใช้ user node
+USER node
+
+# ตั้งค่า working directory
+WORKDIR /home/node
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3   CMD curl -f http://localhost:5678/healthz || exit 1
+
+# เปิด port
+EXPOSE 5678
+
+# Start command
+CMD ["n8n", "start"]

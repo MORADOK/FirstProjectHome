@@ -1,0 +1,38 @@
+{
+  "name": "Flex Appointment Card Example",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "{\n  \"to\": \"={{ $json.LineUserID || 'USER_LINE_ID' }}\",\n  \"messages\": [\n    {\n      \"type\": \"flex\",\n      \"altText\": \"บัตรนัดโรงพยาบาล\",\n      \"contents\": {\n        \"type\": \"bubble\",\n        \"body\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"contents\": [\n            {\n              \"type\": \"text\",\n              \"text\": \"บัตรนัด\",\n              \"weight\": \"bold\",\n              \"size\": \"xl\",\n              \"color\": \"#1DB446\"\n            },\n            {\n              \"type\": \"text\",\n              \"text\": \"โรงพยาบาลโฮม\",\n              \"weight\": \"bold\",\n              \"size\": \"lg\",\n              \"margin\": \"md\"\n            },\n            {\n              \"type\": \"separator\",\n              \"margin\": \"lg\"\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"margin\": \"lg\",\n              \"contents\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": \"ชื่อผู้ป่วย:\",\n                  \"size\": \"md\"\n                },\n                {\n                  \"type\": \"text\",\n                  \"text\": \"={{ $json.PatientName || 'สมชาย ใจดี' }}\",\n                  \"size\": \"md\",\n                  \"align\": \"end\"\n                }\n              ]\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"margin\": \"sm\",\n              \"contents\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": \"วัคซีน:\",\n                  \"size\": \"md\"\n                },\n                {\n                  \"type\": \"text\",\n                  \"text\": \"={{ $json.VaccineName || 'HPV' }}\",\n                  \"size\": \"md\",\n                  \"align\": \"end\"\n                }\n              ]\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"margin\": \"sm\",\n              \"contents\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": \"วันที่:\",\n                  \"size\": \"md\"\n                },\n                {\n                  \"type\": \"text\",\n                  \"text\": \"={{ $json.AppointmentDate || $json.VaccinationDate || '10/07/2025' }}\",\n                  \"size\": \"md\",\n                  \"align\": \"end\"\n                }\n              ]\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"margin\": \"sm\",\n              \"contents\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": \"เวลา:\",\n                  \"size\": \"md\"\n                },\n                {\n                  \"type\": \"text\",\n                  \"text\": \"={{ $json.AppointmentTime || '-' }}\",\n                  \"size\": \"md\",\n                  \"align\": \"end\"\n                }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  ]\n}"
+      },
+      "name": "Push Flex Appointment Card",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        600,
+        400
+      ],
+      "id": "PushFlexAppointmentCard"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "LineUserID", "value": "USER_LINE_ID" },
+            { "name": "PatientName", "value": "สมชาย ใจดี" },
+            { "name": "VaccineName", "value": "HPV" },
+            { "name": "AppointmentDate", "value": "10/07/2025" },
+            { "name": "AppointmentTime", "value": "09:00 - 11:00" }
+          ]
+        }
+      },
+      "name": "Set Sample Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        400,
+        400

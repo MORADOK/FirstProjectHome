@@ -1,0 +1,308 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "line-ai-hybrid",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.events[0].message.text }}",
+        "rules": {
+          "rules": [
+            { "operation": "contains", "value2": "เช็คอิน", "output": 1 },
+            { "operation": "contains", "value2": "บันทึกวัคซีน", "output": 2 }
+          ]
+        }
+      },
+      "name": "Switch (Keyword Intent)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "prompt": "Input: {{ $json.body.events[0].message.text }}\nคุณคือแชทบอทสำหรับคลินิก ช่วยแปลงข้อความนี้เป็น intent (เช่น check-in, book-vaccine, hospital-info, general-query, other) ตอบกลับเป็น JSON เช่น {\"intent\": \"check-in\"}",
+        "chatModel": "openai:gpt-3.5-turbo",
+        "memory": [],
+        "outputFormat": "json"
+      },
+      "name": "AI Agent (Intent Classifier)",
+      "type": "n8n-nodes-base.aiAgent",
+      "typeVersion": 1,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.intent }}",
+        "rules": {
+          "rules": [
+            { "operation": "contains", "value2": "check-in", "output": 1 },
+            { "operation": "contains", "value2": "book-vaccine", "output": 2 },
+            { "operation": "contains", "value2": "hospital-info", "output": 3 },
+            { "operation": "contains", "value2": "general-query", "output": 4 },
+            { "operation": "contains", "value2": "other", "output": 5 }
+          ]
+        }
+      },
+      "name": "Switch (AI Intent Router)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [700, 400]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "message_text", "value": "คุณต้องการเช็คอินสำหรับนัดหมายใช่ไหมคะ?" },
+            { "name": "intent", "value": "check-in" }
+          ]
+        }
+      },
+      "name": "Handle Check-in",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "message_text", "value": "กรุณาแจ้งชื่อ-นามสกุล และวัคซีนที่ต้องการบันทึกค่ะ" },
+            { "name": "intent", "value": "book-vaccine" }
+          ]
+        }
+      },
+      "name": "Handle Book-Vaccine",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "message_text", "value": "คลินิกเปิดทำการทุกวันจันทร์-เสาร์ เวลา 9:00 - 18:00 น. ค่ะ" },
+            { "name": "intent", "value": "hospital-info" }
+          ]
+        }
+      },
+      "name": "Handle Hospital Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "message_text", "value": "คุณมีคำถามทั่วไปเกี่ยวกับอะไรคะ? ฉันจะพยายามช่วยค่ะ" },
+            { "name": "intent", "value": "general-query" }
+          ]
+        }
+      },
+      "name": "Handle General Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "message_text", "value": "ขออภัยค่ะ ระบบไม่เข้าใจคำถามของคุณ กรุณาลองพิมพ์ใหม่ หรือเลือกจาก Rich Menu นะคะ" },
+            { "name": "intent", "value": "fallback-ai" }
+          ]
+        }
+      },
+      "name": "Prepare Fallback (AI)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "user_message", "value": "={{ $json.body.events[0].message.text }}" },
+            { "name": "intent", "value": "={{ $json.intent || '' }}" },
+            { "name": "ai_output", "value": "={{ $json.json ? JSON.stringify($json.json) : '' }}" },
+            { "name": "error", "value": "={{ $json.error || '' }}" },
+            { "name": "timestamp", "value": "={{ $now }}" }
+          ]
+        }
+      },
+      "name": "Prepare Log Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "value": "ID_GOOGLE_SHEET", "mode": "list" },
+        "sheetName": { "__rl": true, "value": "Log", "mode": "list" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "user_message": "={{ $json.user_message }}",
+            "intent": "={{ $json.intent }}",
+            "ai_output": "={{ $json.ai_output }}",
+            "error": "={{ $json.error }}"
+          }
+        }
+      },
+      "name": "Append Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1300, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "YOUR_CRED_ID", "name": "Google Sheets account" }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "let err = $json.error || \"\";\nif (err && err.length > 0) {\n  const errCount = getWorkflowStaticData('global').errCount = (getWorkflowStaticData('global').errCount || 0) + 1;\n  return [{json: {errCount}}];\n} else {\n  getWorkflowStaticData('global').errCount = 0;\n  return [{json: {errCount: 0}}];\n}"
+      },
+      "name": "Error Counter",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.errCount }}",
+              "operation": "larger",
+              "value2": "2"
+            }
+          ]
+        }
+      },
+      "name": "IF (Alert?)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1700, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "jsonBody": "={\n  \"to\": \"YOUR_LINE_USER_ID\",\n  \"messages\": [{ \"type\": \"text\", \"text\": \"แจ้งเตือน: พบ error ติดต่อกันในระบบ n8n chatbot!\" }]\n}",
+        "options": {}
+      },
+      "name": "Send LINE Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1900, 300],
+      "credentials": { "httpHeaderAuth": { "id": "YOUR_LINE_API_CRED", "name": "Line" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "jsonBody": "={\n  \"replyToken\": \"{{ $json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.message_text || 'ขออภัย เกิดข้อผิดพลาดในการตอบกลับ กรุณาลองใหม่ค่ะ' }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "Respond to LINE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1300, 500],
+      "credentials": { "httpHeaderAuth": { "id": "YOUR_LINE_API_CRED", "name": "Line" } }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{ "node": "Switch (Keyword Intent)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Switch (Keyword Intent)": {
+      "main": [
+        [{ "node": "Handle Check-in", "type": "main", "index": 0 }],
+        [{ "node": "Handle Book-Vaccine", "type": "main", "index": 0 }],
+        [{ "node": "AI Agent (Intent Classifier)", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Agent (Intent Classifier)": {
+      "main": [
+        [{ "node": "Switch (AI Intent Router)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Switch (AI Intent Router)": {
+      "main": [
+        [{ "node": "Handle Check-in", "type": "main", "index": 0 }],
+        [{ "node": "Handle Book-Vaccine", "type": "main", "index": 0 }],
+        [{ "node": "Handle Hospital Info", "type": "main", "index": 0 }],
+        [{ "node": "Handle General Query", "type": "main", "index": 0 }],
+        [{ "node": "Prepare Fallback (AI)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Handle Check-in": {
+      "main": [
+        [{ "node": "Prepare Log Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Handle Book-Vaccine": {
+      "main": [
+        [{ "node": "Prepare Log Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Handle Hospital Info": {
+      "main": [
+        [{ "node": "Prepare Log Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Handle General Query": {
+      "main": [
+        [{ "node": "Prepare Log Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Fallback (AI)": {
+      "main": [
+        [{ "node": "Prepare Log Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Log Data": {
+      "main": [
+        [{ "node": "Append Log", "type": "main", "index": 0 }],
+        [{ "node": "Respond to LINE", "type": "main", "index": 0 }]
+      ]
+    },
+    "Append Log": {
+      "main": [
+        [{ "node": "Error Counter", "type": "main", "index": 0 }]
+      ]
+    },
+    "Error Counter": {
+      "main": [
+        [{ "node": "IF (Alert?)", "type": "main", "index": 0 }]
+      ]
+    },
+    "IF (Alert?)": {
+      "main": [
+        [{ "node": "Send LINE Alert", "type": "main", "index": 0 }]
+      ],
+      "else": [
+        []
+      ]
+    }
+  }
+}
