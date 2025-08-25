@@ -1,14 +1,14 @@
 services:
   - type: web
     name: n8n-vaccine-workflow
-    env: docker                 # ✅ ใช้ env: docker (ไม่ใช่ runtime)
+    env: docker                # ✅ ใช้ env: docker
     dockerfilePath: ./Dockerfile
     plan: starter
     region: singapore
     branch: main
     autoDeploy: true
 
-    # n8n มี endpoint /healthz ใช้ตรวจสุขภาพ
+    # health check ของ n8n
     healthCheckPath: /healthz
 
     envVars:
@@ -19,23 +19,22 @@ services:
         value: "5678"
       - key: N8N_PROTOCOL
         value: https
-      # ใช้โดเมน Render ของ service นี้ (นำโดเมนจริงมาใส่แทน)
       - key: WEBHOOK_URL
-        value: https://<YOUR-RENDER-DOMAIN>
+        value: https://firstprojecthome.onrender.com/   # ← ใส่โดเมนจริงของ service นี้
 
-      # (แนะนำ) ปิด telemetry/diagnostics สำหรับ production
+      # (แนะนำ) ปิด diagnostics/notifications ในโปรดักชัน
       - key: N8N_DIAGNOSTICS_ENABLED
         value: "false"
       - key: N8N_VERSION_NOTIFICATIONS_ENABLED
         value: "false"
 
-      # ====== CORS (ถ้าคุณยิง API จากเว็บภายนอกอย่าง Netlify) ======
+      # ====== CORS (ถ้ายิงจากเว็บภายนอกอย่าง Netlify) ======
       - key: N8N_DEFAULT_CORS
         value: "true"
       - key: N8N_CORS_ALLOW_ORIGIN
         value: https://vaccinesystem.netlify.app
 
-      # ====== Database: เชื่อม Render Managed Postgres ======
+      # ====== Database (ตัวอย่าง: Render Managed Postgres) ======
       - key: DB_TYPE
         value: postgresdb
       - key: DB_POSTGRESDB_HOST
